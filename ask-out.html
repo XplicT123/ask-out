@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Question For You</title>
+<style>
+  :root {
+    --bg: #fff1f4; --fg: #3a1c27; --accent: #e8436e; --accent-fg: #fff;
+    --no-bg: #e9dde1; --no-fg: #3a1c27;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #22121a; --fg: #fbe9ef; --accent: #ff6b92; --accent-fg: #2b0f19;
+      --no-bg: #4a3039; --no-fg: #fbe9ef; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #22121a; --fg: #fbe9ef; --accent: #ff6b92; --accent-fg: #2b0f19;
+    --no-bg: #4a3039; --no-fg: #fbe9ef; color-scheme: dark;
+  }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; overflow: hidden;
+  }
+  main { padding: 24px; max-width: 520px; }
+  .emoji { font-size: 4rem; margin-bottom: 8px; }
+  h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); margin: 0 0 28px; }
+  .buttons { display: flex; gap: 16px; justify-content: center; align-items: center; min-height: 64px; }
+  button {
+    font: inherit; font-size: 1.2rem; font-weight: 600; border: 0; border-radius: 999px;
+    padding: 14px 36px; cursor: pointer;
+  }
+  #yes { background: var(--accent); color: var(--accent-fg); transition: transform .15s; }
+  #yes:hover { transform: scale(1.08); }
+  #no { background: var(--no-bg); color: var(--no-fg); transition: left .18s ease-out, top .18s ease-out; }
+  #no.dodging { position: fixed; z-index: 10; }
+</style>
+</head>
+<body>
+<main id="ask">
+  <div class="emoji">💌</div>
+  <h1 id="question">Will you be my girlfriend?</h1>
+  <div class="buttons">
+    <button id="yes">Yes</button>
+    <button id="no">No</button>
+  </div>
+</main>
+
+<script>
+  // Edit these two lines to personalise it
+  var QUESTION = "Will you be my girlfriend?";
+  var YES_MESSAGE = "Yay!! 🎉 It's a date!";
+
+  var yes = document.getElementById("yes");
+  var no = document.getElementById("no");
+  var question = document.getElementById("question");
+  question.textContent = QUESTION;
+
+  var DANGER = 110; // px: how close the cursor can get before No runs away
+
+  function dodge() {
+    var w = window.innerWidth, h = window.innerHeight;
+    var bw = no.offsetWidth, bh = no.offsetHeight;
+    var pad = 16;
+    var cur = no.getBoundingClientRect();
+    var x, y, tries = 0;
+    // pick a spot that is far from where the button currently is
+    do {
+      x = pad + Math.random() * Math.max(1, w - bw - pad * 2);
+      y = pad + Math.random() * Math.max(1, h - bh - pad * 2);
+      tries++;
+    } while (Math.hypot(x - cur.left, y - cur.top) < 150 && tries < 20);
+    no.classList.add("dodging");
+    no.style.left = x + "px";
+    no.style.top = y + "px";
+  }
+
+  // Run away when the pointer gets near, or on any attempt to press it
+  document.addEventListener("pointermove", function (e) {
+    var r = no.getBoundingClientRect();
+    var dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right);
+    var dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom);
+    if (Math.hypot(dx, dy) < DANGER) dodge();
+  });
+  ["pointerdown", "touchstart", "mouseover", "focus"].forEach(function (ev) {
+    no.addEventListener(ev, function (e) { e.preventDefault(); dodge(); }, { passive: false });
+  });
+  no.addEventListener("click", function (e) { e.preventDefault(); dodge(); });
+  window.addEventListener("resize", function () {
+    if (no.classList.contains("dodging")) dodge();
+  });
+
+  yes.addEventListener("click", function () {
+    no.style.display = "none";
+    yes.style.display = "none";
+    document.querySelector(".emoji").textContent = "💖";
+    question.textContent = YES_MESSAGE;
+    for (var i = 0; i < 40; i++) {
+      var s = document.createElement("span");
+      s.textContent = ["💖", "✨", "🎉", "💘"][i % 4];
+      s.style.cssText = "position:fixed;top:-40px;left:" + Math.random() * 100 + "vw;font-size:" +
+        (18 + Math.random() * 22) + "px;pointer-events:none;transition:transform " +
+        (2 + Math.random() * 2) + "s linear, opacity 3s;";
+      document.body.appendChild(s);
+      (function (el) {
+        requestAnimationFrame(function () {
+          el.style.transform = "translateY(" + (window.innerHeight + 80) + "px) rotate(" + (Math.random() * 360) + "deg)";
+          el.style.opacity = "0.2";
+        });
+      })(s);
+    }
+  });
+</script>
+</body>
+</html>
